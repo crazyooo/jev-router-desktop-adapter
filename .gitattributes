@@ -1,0 +1,2 @@
+# Keep upstream npm source byte-for-byte, including its Windows line endings.
+upstream/** -text whitespace=cr-at-eol,-blank-at-eol

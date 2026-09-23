@@ -1,0 +1,28 @@
+{
+  "name": "jev-router-desktop-adapter",
+  "version": "0.2.0",
+  "description": "Unofficial local Jev Router adapter for the Codex desktop app on macOS",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "crazyooo and contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crazyooo/jev-router-desktop-adapter.git"
+  },
+  "homepage": "https://github.com/crazyooo/jev-router-desktop-adapter#readme",
+  "bugs": "https://github.com/crazyooo/jev-router-desktop-adapter/issues",
+  "keywords": [
+    "codex",
+    "chatgpt",
+    "jev",
+    "model-routing",
+    "macos"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start": "node src/server.mjs",
+    "status": "node scripts/manage.mjs status"
+  },
+  "engines": { "node": ">=24.5" }
+}

@@ -1,0 +1,10 @@
+**/node_modules/
+schema/
+runtime/
+evidence/
+.env
+.jev-router.env
+.DS_Store
+coverage/
+*.tmp
+*.log
