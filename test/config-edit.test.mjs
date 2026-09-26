@@ -21,10 +21,8 @@ test('missing root keys are inserted and removed without touching table model fi
   const before='[profiles.example]\nmodel = "test"\n';
   const enabled=enableText(before);assert.equal(disableText(enabled.text,enabled.manifest),before);
 });
-test('managed provider asks for OpenAI auth only when the backend needs it',()=>{
+test('managed provider always requires ChatGPT subscription auth',()=>{
   const subscription=enableText(source);
   assert.match(subscription.text,/\[model_providers\.jev-desktop\]\nname = "Jev Router Desktop"\nbase_url = "http:\/\/127\.0\.0\.1:43127"\nwire_api = "responses"\nrequires_openai_auth = true\n/);
-  const relay=enableText(source,43127,{requiresOpenAiAuth:false});
-  assert.match(relay.text,/requires_openai_auth = false/);
-  assert.equal(disableText(relay.text,relay.manifest),source);
+  assert.equal(disableText(subscription.text,subscription.manifest),source);
 });

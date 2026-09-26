@@ -1,13 +1,19 @@
 # Changes
 
+## 0.3.0 — 2026-09-26
+
+### Changed
+
+- Removed the unverified third-party relay/custom-provider path, its fallback model catalog, and related configuration. The adapter now supports only the official ChatGPT/Codex subscription upstream.
+- The managed provider always requires ChatGPT authentication, and the proxy requires both the bearer credential and ChatGPT account header before forwarding a request.
+- Documentation and tests now state and enforce the supported upstream boundary.
+
 ## 0.2.0 — 2026-09-23
 
 ### Fixed
 
 - **Jev decisions never succeeded on a slow network.** The SDK request timeout was hardcoded to 1500 ms and the turn deadline to 3000 ms, but a decision measures ~2.5–3.0 s on this machine, so every call fell back with `jev-unavailable/no-change` and routing silently degraded to the previous model. The SDK timeout is now derived from the deadline (`deadline - 2000 ms`, floor 1000) and both default to 8000 ms, configurable with `JEV_DESKTOP_DEADLINE_MS`.
-- **The managed provider claimed to need OpenAI credentials it does not have.** `requires_openai_auth` was hardcoded to `true`, which is wrong once the backend is a relay carrying its own bearer token. It is now derived from the resolved backend, so a relay is `false` and the ChatGPT subscription endpoint stays `true`. `scripts/live-core.mjs` derives it the same way instead of overriding it.
-- **Routing picked a model the backend does not serve.** The local fallback catalog is used whenever a backend exposes no readable `/models` (relays commonly implement `/responses` only), and it listed `gpt-5.6-luna`, which the relay rejects with `model_not_found`. The catalog is now pinnable with `JEV_DESKTOP_FALLBACK_MODELS`, and the fast tier can be repointed with `JEV_CODEX_FAST_MODEL`.
-- `~/.jev-router.env` now supplies any `JEV_*`/`TYPESAFE_*` key, not just a fixed whitelist, so tier overrides and the catalog pin reach the serving process.
+- `~/.jev-router.env` now supplies any `JEV_*`/`TYPESAFE_*` key, not just a fixed whitelist, so tier overrides reach the serving process.
 
 ### Added
 

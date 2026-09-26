@@ -22,19 +22,13 @@ function setLine(text,key,line) {
   else if(line!==null)lines.unshift(line);
   return lines.join('\n');
 }
-/**
- * `requiresOpenAiAuth` must mirror the backend the proxy actually talks to: the ChatGPT
- * subscription endpoint needs OpenAI credentials, a relay provider carrying its own
- * bearer token does not. Hardcoding `true` makes the managed provider demand credentials
- * that a relay-only setup does not have.
- */
-export function enableText(text,port=43127,{requiresOpenAiAuth=true}={}) {
+export function enableText(text,port=43127) {
   if(text.includes(BEGIN)||/^\s*\[model_providers\.jev-desktop\]/m.test(text))throw new Error('Jev provider already exists; inspect its owner before editing');
   const before=Object.fromEntries(keys.map(k=>[k,getLine(text,k)]));
   const after={model_provider:'model_provider = "jev-desktop"',model:'model = "jev-router"'};
   let changed=text;
   for(const key of keys)changed=setLine(changed,key,after[key]);
-  const block=`\n${BEGIN}\n[model_providers.jev-desktop]\nname = "Jev Router Desktop"\nbase_url = "http://127.0.0.1:${port}"\nwire_api = "responses"\nrequires_openai_auth = ${requiresOpenAiAuth?'true':'false'}\nsupports_websockets = false\n${END}\n`;
+  const block=`\n${BEGIN}\n[model_providers.jev-desktop]\nname = "Jev Router Desktop"\nbase_url = "http://127.0.0.1:${port}"\nwire_api = "responses"\nrequires_openai_auth = true\nsupports_websockets = false\n${END}\n`;
   changed+=block;
   return {text:changed,manifest:{version:1,before,after,block,beforeHash:sha(text),enabledHash:sha(changed),createdAt:new Date().toISOString()}};
 }

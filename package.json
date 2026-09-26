@@ -1,6 +1,6 @@
 {
   "name": "jev-router-desktop-adapter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Unofficial local Jev Router adapter for the Codex desktop app on macOS",
   "private": true,
   "type": "module",

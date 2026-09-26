@@ -153,6 +153,7 @@ test('proxy forwards streams and auth, blocks API fallback, and propagates cance
   t.after(async()=>{await proxy.close();upstream.closeAllConnections();await new Promise(r=>upstream.close(r));});
   const base=`http://127.0.0.1:${proxy.port}`;
   const health=await fetch(base+'/healthz');assert.equal(health.status,200);
+  const healthBody=await health.json();assert.equal(healthBody.version,'0.3.0');assert.equal(healthBody.backend,'chatgpt-subscription');
   const denied=await fetch(base+'/responses',{method:'POST',headers:{authorization:'Bearer test'},body:JSON.stringify(body())});assert.equal(denied.status,401);
   const browser=await fetch(base+'/status',{headers:{origin:'https://evil.invalid'}});assert.equal(browser.status,403);
   const invalid=await fetch(base+'/responses',{method:'POST',headers,body:'invalid'});assert.equal(invalid.status,400);
@@ -167,39 +168,17 @@ test('proxy forwards streams and auth, blocks API fallback, and propagates cance
   assert.equal(cancelled,true);
 });
 
-test('proxy can route through a custom provider token without subscription account headers',async t=>{
-  let seen;
-  const upstream=http.createServer(async(req,res)=>{
-    if(req.url.startsWith('/models')){seen={auth:req.headers.authorization,account:req.headers['chatgpt-account-id']};res.end(JSON.stringify(catalog));return;}
-    for await(const _chunk of req){}
-    res.writeHead(200,{'content-type':'text/event-stream'});
-    res.end('event: response.completed\ndata: {"type":"response.completed"}\n\n');
-  });
-  await new Promise(r=>upstream.listen(0,'127.0.0.1',r));
-  const backend={name:'custom',baseUrl:`http://127.0.0.1:${upstream.address().port}`,token:'CUSTOM_TEST_TOKEN',subscription:false};
-  const proxy=await startServer({port:0,backend,route:routeFast});
-  t.after(async()=>{await proxy.close();upstream.closeAllConnections();await new Promise(r=>upstream.close(r));});
-  const base=`http://127.0.0.1:${proxy.port}`;
-  const models=await fetch(base+'/models');
-  assert.equal(models.status,200);assert.equal((await models.json()).models[0].slug,AUTO);
-  assert.deepEqual(seen,{auth:'Bearer CUSTOM_TEST_TOKEN',account:undefined});
-  const response=await fetch(base+'/responses',{method:'POST',body:JSON.stringify(body())});
-  assert.equal(response.status,200);assert.match(await response.text(),/response.completed/);
-});
-
 test('Jev request timeout stays inside the turn deadline and clears real latency',()=>{
   assert.equal(jevRequestTimeoutMs(8000),6000);assert.equal(jevRequestTimeoutMs(3000),1000);assert.equal(jevRequestTimeoutMs(500),1000);
   // Measured on this machine: a decision takes ~2.5-3.0s, so the old 1500ms SDK limit failed every call.
   assert.ok(jevRequestTimeoutMs(8000)>3000);
 });
 
-test('the fast tier can be repointed to a model the backend actually serves',()=>{
+test('the fast tier can be repointed to another account model',()=>{
   const previous=process.env.JEV_CODEX_FAST_MODEL;
   try{
     assert.equal(codexTierOf('gpt-5.6-luna'),'haiku');
     process.env.JEV_CODEX_FAST_MODEL='gpt-5.5';
-    // A relay that serves 5.5 but not luna: repointing keeps a cheap tier in the candidate set
-    // instead of routing to a model the backend rejects with model_not_found.
     assert.equal(codexTierOf('gpt-5.5'),'haiku');
   } finally {
     if(previous===undefined)delete process.env.JEV_CODEX_FAST_MODEL;else process.env.JEV_CODEX_FAST_MODEL=previous;

@@ -9,7 +9,7 @@ Please report suspected vulnerabilities privately through GitHub's security advi
 This adapter runs as the current macOS user and can read:
 
 - the Jev key stored in `~/.jev-router.env`;
-- the selected Codex provider configuration in `~/.codex/config.toml`;
+- the Codex configuration in `~/.codex/config.toml` during setup and rollback;
 - incoming Codex request headers and request bodies needed for routing and forwarding.
 
 The local listener accepts only loopback Host values and rejects browser Origin requests. It is not designed to be exposed on a LAN or the public internet.
@@ -19,6 +19,6 @@ The adapter sends the latest user prompt, current model, approximate context siz
 ## Credential handling
 
 - Keep `~/.jev-router.env` mode `0600`.
-- Never commit that file or a real Codex provider token.
+- Never commit that file or a real ChatGPT/Codex credential.
 - Review `git diff --cached` before publishing changes.
 - Rotate any credential that appears in logs, screenshots, issues, or Git history.

@@ -2,14 +2,14 @@
 
 An unofficial, local adapter that brings per-turn [Jev Router](https://github.com/gargpratyush/jev-router) model selection to the Codex desktop app on macOS.
 
-The adapter listens only on loopback, asks Jev which available model is appropriate for the latest user turn, rewrites the model field, and forwards the request to either the signed-in ChatGPT subscription endpoint or an explicitly configured Codex-compatible provider.
+The adapter listens only on loopback, asks Jev which available model is appropriate for the latest user turn, rewrites the model field, and forwards the request to the signed-in ChatGPT subscription endpoint used by Codex.
 
 > This project is independent from OpenAI, TypeSafe AI, and the upstream Jev Router project. It modifies user-level Codex configuration and should be reviewed before installation.
 
 ## Highlights
 
 - Per-turn model routing while preserving manual model selections.
-- ChatGPT subscription and custom Responses API provider support.
+- Official ChatGPT/Codex subscription upstream support.
 - Stable model pinning across retries, tool continuations, and service restarts.
 - Active and shadow modes for safe evaluation.
 - Bounded metadata-only state and logs; no prompt or response bodies are persisted.
@@ -24,9 +24,7 @@ Codex desktop core
     ▼
 127.0.0.1:43127
     ├─ latest user prompt + model catalog ──► TypeSafe Jev decision API
-    └─ rewritten model request ─────────────► configured model backend
-                                               ├─ ChatGPT subscription
-                                               └─ custom Codex-compatible provider
+    └─ rewritten model request ─────────────► ChatGPT subscription endpoint
 ```
 
 Jev receives the latest user prompt, current model, approximate context size, and candidate model identifiers/descriptions. The adapter does not send Jev the OpenAI authorization token or the full conversation. Secrets included in the latest prompt are still part of that prompt and would be sent to Jev.
@@ -36,6 +34,7 @@ Jev receives the latest user prompt, current model, approximate context size, an
 - macOS with the Codex desktop app installed.
 - Node.js 24.5 or newer.
 - A working Codex configuration at `~/.codex/config.toml`.
+- A signed-in ChatGPT account with Codex access.
 - A Jev/TypeSafe API key.
 
 The desktop app and Codex configuration formats can change. The adapter is tested against the versions listed in [VERIFICATION.md](VERIFICATION.md), but compatibility is not guaranteed for future releases.
@@ -96,11 +95,10 @@ Important settings:
 | `JEV_DESKTOP_MODE` | `active` or `shadow` | `active` |
 | `JEV_DESKTOP_BASELINE` | Model executed in shadow mode | strong default |
 | `JEV_DESKTOP_DEADLINE_MS` | Maximum routing-decision time | `8000` |
-| `JEV_DESKTOP_FALLBACK_MODELS` | Catalog used when a custom backend has no readable `/models` | built-in list |
 | `JEV_CODEX_FAST_MODEL` | Override the fast-tier model mapping | upstream default |
 | `JEV_ALLOW_FABLE` | Permit the long-context tier | disabled |
 
-For custom providers, the adapter resolves the provider that was active before Jev was enabled. Its `base_url` and optional `experimental_bearer_token` stay in the user's Codex configuration and are never copied to the managed provider block.
+The adapter intentionally does not support third-party relay services or custom model providers. It performs no protocol conversion or model-name translation and only forwards Codex Responses API traffic to the official ChatGPT subscription endpoint.
 
 ## Data and privacy
 

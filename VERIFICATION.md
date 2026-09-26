@@ -20,8 +20,7 @@ The test suite covers:
 - metadata-only persistence, retention bounds, and failed-write rollback;
 - Responses Lite compatibility filtering;
 - active and shadow mode behavior;
-- ChatGPT subscription and custom provider authentication;
-- model-catalog fallback for custom providers;
+- ChatGPT subscription authentication requirements;
 - reversible, conflict-aware Codex configuration edits.
 
 Run:
@@ -56,4 +55,4 @@ node scripts/live-core.mjs --full
 - Native model-selector rendering is not covered by automated UI tests.
 - Physical sleep/wake and a real logout/login have not been exercised.
 - Codex desktop internals are not a stable public API and may require future compatibility changes.
-- Custom providers vary in protocol behavior; pin `JEV_DESKTOP_FALLBACK_MODELS` to models the provider actually serves when `/models` is unavailable.
+- Third-party relay services and custom model providers are not supported.

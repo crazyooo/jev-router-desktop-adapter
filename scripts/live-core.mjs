@@ -4,7 +4,6 @@ import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { resolveBackend } from '../src/backend.mjs';
 
 const base = process.env.JEV_TEST_URL ?? 'http://127.0.0.1:43127';
 const original = process.argv.includes('--original');
@@ -14,7 +13,7 @@ const args = ['app-server', '--stdio',
   '-c', 'model_providers.jev-desktop.name="Jev Router Desktop"',
   '-c', `model_providers.jev-desktop.base_url="${base}"`,
   '-c', 'model_providers.jev-desktop.wire_api="responses"',
-  '-c', `model_providers.jev-desktop.requires_openai_auth=${resolveBackend().subscription}`,
+  '-c', 'model_providers.jev-desktop.requires_openai_auth=true',
   '-c', 'model_providers.jev-desktop.supports_websockets=false'];
 const child = spawn('/Applications/ChatGPT.app/Contents/Resources/codex', configured ? ['app-server','--stdio'] : args, {
   stdio: ['pipe','pipe','pipe'], env: { ...process.env, RUST_LOG: 'error', NO_PROXY: '127.0.0.1,localhost,::1', no_proxy: '127.0.0.1,localhost,::1' },

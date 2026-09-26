@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { enableText, disableText, sha } from '../src/config-edit.mjs';
-import { resolveBackend } from '../src/backend.mjs';
 
 const root=dirname(dirname(fileURLToPath(import.meta.url)));
 const data=join(homedir(),'Library','Application Support','jev-router-desktop');
@@ -70,7 +69,7 @@ try {
       if(!saved.disabledAt && original.includes(saved.block))throw new Error('Unresolved previous installation manifest');
       atomic(join(data,`installation-${Date.now()}.json`),JSON.stringify(saved,null,2));
     }
-    const next=enableText(original,port,{requiresOpenAiAuth:resolveBackend().subscription});
+    const next=enableText(original,port);
     atomic(manifestPath,JSON.stringify(next.manifest,null,2));
     if(sha(readFileSync(config,'utf8'))!==sha(original))throw new Error('Config changed concurrently; retry after inspection');
     atomic(config,next.text,statSync(config).mode&0o777);
