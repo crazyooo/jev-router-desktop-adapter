@@ -11,8 +11,9 @@ import { StateStore } from '../src/state.mjs';
 import { startServer } from '../src/server.mjs';
 
 const fast = 'gpt-5.6-luna', balanced = 'gpt-5.6-terra', strong = 'gpt-5.6-sol';
-const catalog = { models: [fast, balanced, strong].map(slug => ({ slug, visibility: 'list', supported_in_api: true, use_responses_lite: true,
-  supported_reasoning_levels: [{ effort: 'low' }, { effort: 'high' }], default_reasoning_level: 'low' })) };
+const catalog = { models: [{slug:AUTO,visibility:'hide',supported_in_api:true,use_responses_lite:true},
+  ...[fast, balanced, strong].map(slug => ({ slug, visibility: 'list', supported_in_api: true, use_responses_lite: true,
+  supported_reasoning_levels: [{ effort: 'low' }, { effort: 'high' }], default_reasoning_level: 'low' }))] };
 const headers = { authorization: 'Bearer TEST_ONLY_TOKEN', 'chatgpt-account-id': 'TEST_ACCOUNT' };
 const body = (thread = 'A', turn = '1', prompt = 'Fix a typo') => ({ model: AUTO, prompt_cache_key: thread,
   client_metadata: { 'x-codex-turn-metadata': JSON.stringify({ thread_id: thread, turn_id: turn }) },
@@ -22,8 +23,8 @@ const routeFast = async () => ({ choice: fast, confidence: 0.98 });
 test('catalog injects exactly one auto model and preserves manual choices', () => {
   const output = withAutoModel(withAutoModel(catalog));
   assert.equal(output.models.filter(x => x.slug === AUTO).length, 1);
-  assert.deepEqual(output.models.slice(1), catalog.models);
-  assert.equal(catalog.models.length, 3);
+  assert.deepEqual(output.models.slice(1), catalog.models.slice(1));
+  assert.equal(catalog.models.length, 4);
 });
 
 test('fresh turn routes once; duplicate requests and tool continuation stay pinned', async () => {
@@ -153,7 +154,7 @@ test('proxy forwards streams and auth, blocks API fallback, and propagates cance
   t.after(async()=>{await proxy.close();upstream.closeAllConnections();await new Promise(r=>upstream.close(r));});
   const base=`http://127.0.0.1:${proxy.port}`;
   const health=await fetch(base+'/healthz');assert.equal(health.status,200);
-  const healthBody=await health.json();assert.equal(healthBody.version,'0.3.0');assert.equal(healthBody.backend,'chatgpt-subscription');
+  const healthBody=await health.json();assert.equal(healthBody.version,'0.3.1');assert.equal(healthBody.backend,'chatgpt-subscription');
   const denied=await fetch(base+'/responses',{method:'POST',headers:{authorization:'Bearer test'},body:JSON.stringify(body())});assert.equal(denied.status,401);
   const browser=await fetch(base+'/status',{headers:{origin:'https://evil.invalid'}});assert.equal(browser.status,403);
   const invalid=await fetch(base+'/responses',{method:'POST',headers,body:'invalid'});assert.equal(invalid.status,400);

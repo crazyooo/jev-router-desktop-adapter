@@ -4,7 +4,8 @@ import { QUESTIONS, questionForModels, shouldUseExactModel, availableTiers } fro
 import { decide, detectOverride } from '../upstream/src/policy.mjs';
 import { codexTierOf, applyCodexTier } from '../upstream/src/codex-proxy.mjs';
 
-export const AUTO = 'jev-router';
+export const AUTO = 'gpt-reserve';
+export const AUTO_DISPLAY_NAME = 'Jev Router';
 export const digest = value => createHash('sha256').update(String(value)).digest('hex');
 const textOf = content => typeof content === 'string' ? content : (Array.isArray(content) ? content : [])
   .filter(x => ['text', 'input_text'].includes(x.type)).map(x => x.text).join('\n');
@@ -37,10 +38,11 @@ export function candidatesFrom(catalog, responsesLite) {
 
 export function withAutoModel(catalog) {
   const copy = structuredClone(catalog);
+  const carrier = copy.models.find(x => x.slug === AUTO);
+  if (!carrier) throw new Error('Compatible ChatGPT carrier model is unavailable');
   copy.models = copy.models.filter(x => x.slug !== AUTO);
   if (!candidatesFrom(copy).length) throw new Error('No routable models in authenticated catalog');
-  const template = copy.models.find(x => x.slug === 'gpt-5.6-sol') ?? copy.models.find(x => x.visibility === 'list');
-  copy.models.unshift({ ...template, slug: AUTO, display_name: 'Jev Router',
+  copy.models.unshift({ ...carrier, display_name: AUTO_DISPLAY_NAME,
     description: '每轮自动选模型 · 手动选择具体模型可暂停路由', visibility: 'list', supported_in_api: true, priority: 0, upgrade: null });
   return copy;
 }

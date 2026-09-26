@@ -21,7 +21,7 @@ The adapter listens only on loopback, asks Jev which available model is appropri
 
 ```text
 Codex desktop core
-    │  Responses API request (`model: jev-router`)
+    │  Responses API request (`model: gpt-reserve`, displayed as Jev Router)
     ▼
 127.0.0.1:43127
     ├─ latest user prompt + model catalog ──► TypeSafe Jev decision API
@@ -53,6 +53,8 @@ node scripts/manage.mjs enable
 ```
 
 Enabling also creates `~/Library/Application Support/jev-router-desktop/models.json` from Codex's current model cache. This local catalog is required because the desktop UI otherwise filters custom model identifiers out of its menu.
+
+ChatGPT-account sessions reject unknown model identifiers before a request reaches a custom provider. The adapter therefore uses Codex's official hidden `gpt-reserve` identifier as a local carrier, displays it as **Jev Router**, and always rewrites it to the selected concrete model before forwarding. The carrier itself is never sent upstream.
 
 Restart the Codex desktop app after enabling the provider. New tasks should default to **Jev Router**, which appears alongside concrete models in the model menu. Existing tasks may retain their previous provider or concrete model until explicitly changed.
 

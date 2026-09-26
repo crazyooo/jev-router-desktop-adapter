@@ -1,12 +1,14 @@
 # Changes
 
-## Unreleased
+## 0.3.1 — 2026-09-26
 
 ### Fixed
 
 - Added a managed `model_catalog_json` so **Jev Router** is visible in the Codex desktop model menu and can be selected again after manually choosing a concrete model.
 - Added `refresh-catalog` for rebuilding the visible menu from Codex's current account model cache after account changes.
 - Rollback now restores any previous `model_catalog_json` value together with the provider and model.
+- Replaced the unsupported custom `jev-router` model identifier with Codex's recognized hidden `gpt-reserve` carrier. ChatGPT-account validation now accepts the selection, while the local proxy rewrites it before any upstream request.
+- Existing managed installations migrate from the legacy trigger during `enable` without losing their original rollback values.
 
 ## 0.3.0 — 2026-09-26
 

@@ -53,7 +53,7 @@ export async function startServer({ port = DEFAULT_PORT, upstream = UPSTREAM, st
       const host = req.headers.host?.split(':')[0];
       if (!['127.0.0.1', 'localhost'].includes(host) || req.headers.origin) return reply(res, 403, { error: 'local_native_clients_only' });
       const url = new URL(req.url, 'http://127.0.0.1');
-      if (req.method === 'GET' && url.pathname === '/healthz') return reply(res, 200, { ok: true, version: '0.3.0', pid: process.pid, startedAt, requests, backend: 'chatgpt-subscription', mode: router.mode, shadowBaseline: router.shadowBaseline, deadlineMs: router.deadlineMs });
+      if (req.method === 'GET' && url.pathname === '/healthz') return reply(res, 200, { ok: true, version: '0.3.1', pid: process.pid, startedAt, requests, backend: 'chatgpt-subscription', mode: router.mode, shadowBaseline: router.shadowBaseline, deadlineMs: router.deadlineMs });
       if (req.method === 'GET' && url.pathname === '/status') return reply(res, 200, { recent: store.data.recent, threads: Object.keys(store.data.threads).length });
       if (!((req.method === 'GET' && url.pathname === '/models') || (req.method === 'POST' && ['/responses', '/responses/compact'].includes(url.pathname)))) return reply(res, 404, { error: 'unsupported_endpoint' });
       if (!req.headers.authorization?.startsWith('Bearer ') || !req.headers['chatgpt-account-id']) return reply(res, 401, { error: 'chatgpt_subscription_auth_required' });

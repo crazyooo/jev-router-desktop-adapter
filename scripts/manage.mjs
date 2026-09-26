@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { enableText, disableText, sha } from '../src/config-edit.mjs';
+import { enableText, disableText, migrateLegacyTriggerText, sha } from '../src/config-edit.mjs';
 import { modelCatalogText } from '../src/model-catalog.mjs';
 
 const root=dirname(dirname(fileURLToPath(import.meta.url)));
@@ -78,7 +78,18 @@ try {
     const original=readFileSync(config,'utf8');
     if(existsSync(manifestPath)){
       const saved=JSON.parse(readFileSync(manifestPath,'utf8'));
-      if(original.includes(saved.block)&&/^model_provider\s*=\s*"jev-desktop"/m.test(original)){console.log('Already enabled');process.exit(0);}
+      if(original.includes(saved.block)&&/^model_provider\s*=\s*"jev-desktop"/m.test(original)){
+        const catalogModels=refreshCatalog();
+        if(saved.after?.model==='model = "jev-router"'||/^model\s*=\s*"jev-router"/m.test(original)){
+          const migrated=migrateLegacyTriggerText(original,saved);
+          if(sha(readFileSync(config,'utf8'))!==sha(original))throw new Error('Config changed concurrently; retry after inspection');
+          atomic(config,migrated.text,statSync(config).mode&0o777);
+          atomic(manifestPath,JSON.stringify(migrated.manifest,null,2));
+          console.log(JSON.stringify({enabled:true,migrated:true,config,catalog:catalogPath,catalogModels,rollback:manifestPath}));
+          process.exit(0);
+        }
+        console.log(JSON.stringify({enabled:true,refreshed:true,catalog:catalogPath,catalogModels}));process.exit(0);
+      }
       if(!saved.disabledAt && original.includes(saved.block))throw new Error('Unresolved previous installation manifest');
       atomic(join(data,`installation-${Date.now()}.json`),JSON.stringify(saved,null,2));
     }

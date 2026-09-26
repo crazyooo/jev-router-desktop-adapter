@@ -9,7 +9,7 @@ const base = process.env.JEV_TEST_URL ?? 'http://127.0.0.1:43127';
 const original = process.argv.includes('--original');
 const configured = original || process.argv.includes('--configured');
 const args = ['app-server', '--stdio',
-  '-c', 'model_provider="jev-desktop"', '-c', 'model="jev-router"',
+  '-c', 'model_provider="jev-desktop"', '-c', 'model="gpt-reserve"',
   '-c', 'model_providers.jev-desktop.name="Jev Router Desktop"',
   '-c', `model_providers.jev-desktop.base_url="${base}"`,
   '-c', 'model_providers.jev-desktop.wire_api="responses"',
@@ -64,10 +64,10 @@ const waitTurn=async turnId=>{
   return texts.get(turnId)??'';
 };
 const start=async(tools=false)=>{
-  const result=await rpc('thread/start',{ephemeral:true,cwd:'/private/tmp',...(configured?{}:{model:'jev-router',modelProvider:'jev-desktop'}),sandbox:'read-only',approvalPolicy:'never',
+  const result=await rpc('thread/start',{ephemeral:true,cwd:'/private/tmp',...(configured?{}:{model:'gpt-reserve',modelProvider:'jev-desktop'}),sandbox:'read-only',approvalPolicy:'never',
     baseInstructions:'You are a test assistant. Follow the user exactly. Never access files, network, or other tasks. Only use test_ping if requested.',
     dynamicTools:tools?[{type:'function',name:'test_ping',description:'A harmless test tool returning PONG.',inputSchema:{type:'object',properties:{},additionalProperties:false}}]:[]});
-  if(configured){assert.equal(result.modelProvider,original?'openai-http':'jev-desktop');assert.equal(result.model,original?'gpt-5.6-sol':'jev-router');}
+  if(configured){assert.equal(result.modelProvider,original?'openai-http':'jev-desktop');assert.equal(result.model,original?'gpt-5.6-sol':'gpt-reserve');}
   return result.thread.id;
 };
 const turn=async(threadId,text,model)=>{
@@ -80,7 +80,7 @@ try{
   send({method:'initialized',params:{}});
   const models=await rpc('model/list',{includeHidden:false});
   const list=models.data??models.models??[];
-  if(!original)assert.ok(list.some(x=>(x.id??x.model)==='jev-router'),'model/list must expose Jev Router');
+  if(!original)assert.ok(list.some(x=>(x.id??x.model)==='gpt-reserve'&&x.displayName==='Jev Router'),'model/list must expose the recognized Jev Router carrier');
   console.log(JSON.stringify({check:'desktop_model_list',models:list.map(x=>x.id??x.model)}));
   const first=await start();
   const a=await turn(first,'Reply exactly LIVE_JEV_OK. Do not call tools.');
