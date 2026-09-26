@@ -60,6 +60,17 @@ Restart the Codex desktop app after enabling the provider. New tasks should defa
 
 The LaunchAgent records the Node executable used during installation, so it does not depend on an interactive shell or a particular Node version manager.
 
+### Updating an existing installation
+
+After pulling a newer version, run:
+
+```bash
+node scripts/manage.mjs restart
+node scripts/manage.mjs enable
+```
+
+For an existing managed installation, `enable` refreshes the model menu and migrates the old `jev-router` selection to `gpt-reserve`. Restart the Codex desktop app afterward. If the command reports a configuration conflict, inspect `~/.codex/config.toml` and `~/Library/Application Support/jev-router-desktop/installation.json` before changing or restoring either file.
+
 ## Daily use
 
 ```bash
