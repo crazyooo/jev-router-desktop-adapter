@@ -9,6 +9,7 @@ The adapter listens only on loopback, asks Jev which available model is appropri
 ## Highlights
 
 - Per-turn model routing while preserving manual model selections.
+- A visible **Jev Router** model-menu entry alongside concrete account models.
 - Official ChatGPT/Codex subscription upstream support.
 - Stable model pinning across retries, tool continuations, and service restarts.
 - Active and shadow modes for safe evaluation.
@@ -51,7 +52,9 @@ node scripts/manage.mjs install-service
 node scripts/manage.mjs enable
 ```
 
-Restart the Codex desktop app after enabling the provider. New tasks should default to **Jev Router**. Existing tasks may retain their previous provider or concrete model until explicitly changed.
+Enabling also creates `~/Library/Application Support/jev-router-desktop/models.json` from Codex's current model cache. This local catalog is required because the desktop UI otherwise filters custom model identifiers out of its menu.
+
+Restart the Codex desktop app after enabling the provider. New tasks should default to **Jev Router**, which appears alongside concrete models in the model menu. Existing tasks may retain their previous provider or concrete model until explicitly changed.
 
 The LaunchAgent records the Node executable used during installation, so it does not depend on an interactive shell or a particular Node version manager.
 
@@ -59,6 +62,7 @@ The LaunchAgent records the Node executable used during installation, so it does
 
 ```bash
 node scripts/manage.mjs status
+node scripts/manage.mjs refresh-catalog
 node scripts/manage.mjs mode
 node scripts/manage.mjs mode shadow gpt-5.6-terra
 node scripts/manage.mjs mode active
@@ -66,6 +70,8 @@ node scripts/manage.mjs restart
 ```
 
 Selecting a concrete model passes that choice through unchanged. Selecting **Jev Router** enables automatic routing again. A turn's retries and tool continuations remain pinned to the same chosen model.
+
+After switching ChatGPT accounts, run `node scripts/manage.mjs refresh-catalog` and restart Codex to refresh the visible model list. To show only models known to be enabled for that account, append their model identifiers to the command.
 
 The two `.command` files in the repository provide Finder-friendly shortcuts for status and rollback on macOS.
 
@@ -106,6 +112,7 @@ The adapter intentionally does not support third-party relay services or custom 
 - State: `~/Library/Application Support/jev-router-desktop/state.json`.
 - Logs: `~/Library/Logs/jev-router-desktop/events.jsonl`.
 - Rollback manifest: `~/Library/Application Support/jev-router-desktop/installation.json`.
+- Model-menu catalog: `~/Library/Application Support/jev-router-desktop/models.json`.
 - Task and account identifiers are hashed.
 - State stores model, reason, confidence, timing, and bounded task/turn identifiers only.
 - Logs do not store prompts, tool results, authorization headers, or raw request bodies.

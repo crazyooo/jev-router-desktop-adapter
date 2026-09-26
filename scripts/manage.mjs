@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { enableText, disableText, sha } from '../src/config-edit.mjs';
+import { modelCatalogText } from '../src/model-catalog.mjs';
 
 const root=dirname(dirname(fileURLToPath(import.meta.url)));
 const data=join(homedir(),'Library','Application Support','jev-router-desktop');
@@ -12,6 +13,8 @@ const label='local.jev-router.desktop';
 const plist=join(homedir(),'Library','LaunchAgents',label+'.plist');
 const target=`gui/${process.getuid()}/${label}`;
 const manifestPath=join(data,'installation.json');
+const catalogPath=join(data,'models.json');
+const modelCache=join(homedir(),'.codex','models_cache.json');
 const envPath=join(homedir(),'.jev-router.env');
 const command=process.argv[2]??'status';
 const port=43127;
@@ -34,7 +37,7 @@ const envSet=(key,value)=>{
 const health=async()=>{
   const response=await fetch(`http://127.0.0.1:${port}/healthz`,{signal:AbortSignal.timeout(2000)});
   const value=await response.json();
-  if(!response.ok||value.version!=='0.1.0'||!value.ok)throw new Error('Unexpected service on configured port');
+  if(!response.ok||!value.ok||value.backend!=='chatgpt-subscription')throw new Error('Unexpected service on configured port');
   return value;
 };
 const waitHealth=async()=>{
@@ -43,12 +46,22 @@ const waitHealth=async()=>{
   }
   throw new Error('Service did not come back after restart; run status to inspect.');
 };
+const refreshCatalog=(models=[])=>{
+  if(!existsSync(modelCache))throw new Error('Codex model cache is missing; open Codex once and retry');
+  const text=modelCatalogText(readFileSync(modelCache,'utf8'),{allowedModels:models});
+  atomic(catalogPath,text);
+  return JSON.parse(text).models.map(model=>model.slug);
+};
 
 try {
   if(command==='status') {
     const status=await health();
     const decisions=await(await fetch(`http://127.0.0.1:${port}/status`)).json();
-    console.log(JSON.stringify({service:status,providerEnabled:/^model_provider\s*=\s*"jev-desktop"/m.test(readFileSync(config,'utf8')),lastDecisions:decisions.recent.slice(-8)},null,2));
+    const configured=readFileSync(config,'utf8');
+    console.log(JSON.stringify({service:status,providerEnabled:/^model_provider\s*=\s*"jev-desktop"/m.test(configured),
+      catalogEnabled:new RegExp(`^model_catalog_json\\s*=\\s*${JSON.stringify(catalogPath).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}$`,'m').test(configured),
+      catalogModels:existsSync(catalogPath)?JSON.parse(readFileSync(catalogPath,'utf8')).models.map(model=>model.slug):[],
+      lastDecisions:decisions.recent.slice(-8)},null,2));
   } else if(command==='install-service') {
     if(root.startsWith('/private/tmp/'))throw new Error('Deploy project to its permanent path before installing LaunchAgent');
     mkdirSync(data,{recursive:true,mode:0o700});
@@ -69,11 +82,15 @@ try {
       if(!saved.disabledAt && original.includes(saved.block))throw new Error('Unresolved previous installation manifest');
       atomic(join(data,`installation-${Date.now()}.json`),JSON.stringify(saved,null,2));
     }
-    const next=enableText(original,port);
+    const catalogModels=refreshCatalog();
+    const next=enableText(original,port,{catalogPath});
     atomic(manifestPath,JSON.stringify(next.manifest,null,2));
     if(sha(readFileSync(config,'utf8'))!==sha(original))throw new Error('Config changed concurrently; retry after inspection');
     atomic(config,next.text,statSync(config).mode&0o777);
-    console.log(JSON.stringify({enabled:true,config,changedKeys:['model_provider','model'],rollback:manifestPath}));
+    console.log(JSON.stringify({enabled:true,config,changedKeys:['model_provider','model','model_catalog_json'],catalog:catalogPath,catalogModels,rollback:manifestPath}));
+  } else if(command==='refresh-catalog') {
+    const models=process.argv.slice(3);
+    console.log(JSON.stringify({catalog:catalogPath,models:refreshCatalog(models)},null,2));
   } else if(command==='disable') {
     const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
     const original=readFileSync(config,'utf8');
@@ -105,5 +122,5 @@ try {
     if(/^model_provider\s*=\s*"jev-desktop"/m.test(readFileSync(config,'utf8')))throw new Error('Restore the provider and restart the desktop app before stopping its proxy');
     launch('disable',target);
     launch('bootout',target);console.log('LaunchAgent unloaded and future login startup disabled. Plist and state retained; install-service re-enables it.');
-  } else throw new Error('Commands: status, mode [active|shadow] [baseline-model], install-service, enable, disable, restart, stop');
+  } else throw new Error('Commands: status, refresh-catalog [model...], mode [active|shadow] [baseline-model], install-service, enable, disable, restart, stop');
 } catch(error) { console.error(error.message);process.exitCode=1; }
